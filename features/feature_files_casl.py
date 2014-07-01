@@ -1,4 +1,4 @@
-import os.path, csv, glob, gzip, argparse, cStringIO, codecs
+import os.path, csv, glob, gzip, argparse, cStringIO, codecs, numpy as np, cPickle as pickle
 from operator import itemgetter
 from feature_files import FeatureFiles
 
@@ -71,6 +71,23 @@ class FeatureFilesCasl(FeatureFiles):
         FeatureFiles.__init__(self, 'casl')
         self.dict_feats={}
 
+    def create_data_matrices(self, dict_sent):
+    
+        dict_data = {}
+        for ii in dict_sent.iterkeys():
+            list_sent = dict_sent[ii]
+            d_X, d_y, d_text = zip(*list_sent)
+            X = [jj.values() for jj in d_X]
+            text = [jj for jj in d_text]
+            y = [jj.values()  for jj in d_y]
+            X_names = [jj.keys()  for jj in d_X]
+            y_names = [jj.keys()  for jj in d_y]
+            
+            dict_data[ii] = (np.asmatrix(X,np.float), y, text, X_names, y_names)
+
+        return dict_data
+
+
     # creates one vw file per label in the big-5 including the liwc features and lda, if posterior file passed
     def create_vw_string(self, dict_human_feats, dict_lda):
     
@@ -79,16 +96,16 @@ class FeatureFilesCasl(FeatureFiles):
             
             dict_str[ii]={}
             
-            list_liwc = dict_human_feats[ii]
+            list_sent = dict_human_feats[ii]
             list_lda  = dict_lda[ii]
     
             sent_str=''
             
-            for jj, ll in zip(list_liwc, list_lda): # subjects
-                liwc_str = ' '.join([kk+':'+ str(jj[1][kk]) for kk in jj[1].iterkeys()])
+            for jj, ll in zip(list_sent, list_lda): # subjects
+                score_str = ' '.join([kk+':'+ str(jj[1][kk]) for kk in jj[1].iterkeys()])
                 lda_str=''
                 lda_str += ' |mallet ' + ' '.join(['topic_' + str(kk[0]) + ':' + str(kk[1]) for kk in sorted(ll, key=itemgetter(0))]) 
-                sent_str  +=  str(jj[0]['uid']) + " 1 " + str(jj[0]['sent']) + ' |lda ' + liwc_str + lda_str + '\n'
+                sent_str  +=  str(jj[0]['uid']) + " 1 " + str(jj[0]['sent']) + ' |lda ' + score_str + lda_str + '\n'
                 
             dict_str[ii]['sent'] = sent_str
     
@@ -139,7 +156,7 @@ class FeatureFilesCasl(FeatureFiles):
                     # ii is treated as an individual dataset
                     if not d.has_key(os.path.basename(ii)):
                         d[os.path.basename(ii)] = []
-                    d[os.path.basename(ii)].append((d_feats, sent, text))
+                    d[os.path.basename(ii)].append((d_feats, {'sent': sent}, text))
                 except:
                     print 'Whoops'
                     continue
@@ -156,10 +173,14 @@ if __name__ == '__main__':
 
     ffc = FeatureFilesCasl()
     dict_feats = ffc.get_feats(args)
-    dict_lda_str = ffc.create_lda_string(dict_feats, 2) # NOT WORKING
+    dict_data_matrices = ffc.create_data_matrices(dict_feats)
+    for ii in dict_data_matrices.iterkeys():
+        pickle.dump(dict_data_matrices[ii], open(args.feat_folder + '/soc-' + ii + '.sent.pkl','wb'))
 
-    for ii in dict_lda_str.iterkeys(): # NOT WORKING
-        open(args.feat_folder + '/casl-' + ii + '.mallet','wt').write(dict_lda_str[ii].encode('utf-8'))
+    #dict_lda_str = ffc.create_lda_string(dict_feats, 2)
 
-    
+    #for ii in dict_lda_str.iterkeys(): # NOT WORKING
+    #    open(args.feat_folder + '/casl-' + ii + '.mallet','wt').write(dict_lda_str[ii].encode('utf-8'))
+
+# WILL CREATE NEW INPUT FILES WITH ARABIC ALREADY TOKENIZED BY PETER SCRIPTS
 

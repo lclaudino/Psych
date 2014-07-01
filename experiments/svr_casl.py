@@ -1,33 +1,34 @@
-import argparse, os, sys, cPickle as pickle, numpy as np
+import argparse, os, sys, cPickle as pickle, numpy as np, codecs
 from sklearn.svm import SVR
 from sklearn.cross_validation import KFold
 from sklearn import preprocessing
 from glob import iglob
-from nltk.corpus import stopwords
-from nltk.tokenize import RegexpTokenizer
+#from nltk.corpus import stopwords
+#from nltk.tokenize import RegexpTokenizer
 #from gensim.models import LdaModel
 from gensim.models.ldamallet import LdaMallet
 from gensim import corpora
 
 def to_tokenized(text_list, dictionary, stoplist):
     
-    ret = RegexpTokenizer('[\w\d]+') 
-    texts = [[word.encode('utf-8') for word in ret.tokenize(document.lower()) 
-              if word not in stoplist and len(word) >= 3] for document in text_list]
+#     ret = RegexpTokenizer('[\w\d]+') 
+#     texts = [[word.encode('utf-8') for word in ret.tokenize(document.lower()) 
+#               if word not in stoplist and len(word) >= 3] for document in text_list]
 
 #     texts = [[word.encode('utf-8','ignore') for word in ret.tokenize(document.lower()) 
 #               if word not in stoplist and len(word) >= 3] for document in text_list]
 
-    
+
+    texts = [[word for word in document.lower().split(" ")] for document in text_list]    
     return [dictionary.doc2bow(jj) for jj in texts]
 
 
 
 def to_corpus(text_list, stoplist):
     
-    ret = RegexpTokenizer('[\w\d]+') 
-    texts = [[word.encode('utf-8') for word in ret.tokenize(document.lower()) 
-              if word not in stoplist and len(word) >= 3] for document in text_list]
+#     ret = RegexpTokenizer('[\w\d]+') 
+#     texts = [[word.encode('utf-8') for word in ret.tokenize(document.lower()) 
+#               if word not in stoplist and len(word) >= 3] for document in text_list]
 
     # remove words that appear only once
 #     all_tokens = sum(texts, [])
@@ -35,6 +36,7 @@ def to_corpus(text_list, stoplist):
 #     texts = [[word for word in text if word not in tokens_once]
 #              for text in texts]
 
+    texts = [[word for word in document.lower().split(" ")] for document in text_list]
     dictionary = corpora.Dictionary(texts)
     return dictionary
 
@@ -44,7 +46,7 @@ def run_lda(pkl_exp_file, stoplist, num_topics, k, feat_folder):
     skf={}
     for ii in iglob(args.pkl_exp_file):
 
-        dict_data = pickle.load(open(ii))
+        dict_data = pickle.load(codecs.open(ii))
         texts=dict_data[2]
         dic = to_corpus(texts, stoplist) 
         
@@ -70,8 +72,9 @@ def run_lda(pkl_exp_file, stoplist, num_topics, k, feat_folder):
             
     pickle.dump([dict_lda, skf], open(feat_folder + '/mallet.lda.topics_' + str(num_topics) + 
                                       '_k_' + str(k) + '.pkl', 'wb'))
-            
     return dict_lda, skf
+            
+
           
 if __name__ == '__main__':
     
@@ -84,8 +87,8 @@ if __name__ == '__main__':
                          help = 'Folder where features will be dumped')
     parser.add_argument( '--pkl_exp_file', type = str, dest = 'pkl_exp_file', 
                          help = 'Pickle file to run experiment')
-    parser.add_argument( '--big5_var', type = str, dest = 'big5_var', 
-                         help = 'Pickle which variable to experiment on: neuro, extra, consc, open, agree')
+    parser.add_argument( '--var', type = str, dest = 'var', 
+                         help = 'Pickle which variable to experiment on: currently, only sent')
     parser.add_argument( '--num_topics', type = int, dest = 'num_topics', 
                          help = 'Number of topics to be used')
     parser.add_argument( '--mallet_bin', type = str, dest = 'mallet_bin', 
@@ -93,10 +96,7 @@ if __name__ == '__main__':
     parser.add_argument( '--k', type = int, dest = 'k', 
                          help = 'Number of folds to do k-fold with')
 
-    stoplist = stopwords.words('english') + ['ive', 'id', \
-                                             'doesn','didn', 'isn', \
-                                             'aren', 'don', 'won', 'like', 'really']
-    stoplist = [word.replace('\'','') for word in stoplist]
+    stoplist = []
 
     args = parser.parse_args()
 
@@ -113,7 +113,7 @@ if __name__ == '__main__':
         svr = SVR(kernel='linear')
         
         dict_data = pickle.load(open(ii))
-        var = dict_data[4][0].index(args.big5_var)
+        var = dict_data[4][0].index(args.var)
         
         X = preprocessing.scale(dict_data[0])
         y = np.asarray(zip(*dict_data[1])[var],np.float)
@@ -167,7 +167,7 @@ if __name__ == '__main__':
         r[ii]=(np.mean(np.array(r_X)), np.mean(np.array(r_lda)), np.mean(np.array(r_X_lda)))
         
     # Print correlation coefficients
-    pickle.dump(r,open(args.out_folder + '/'+args.big5_var+'.results.topics_' + str(args.num_topics) +
+    pickle.dump(r,open(args.out_folder + '/'+args.var+'.results.topics_' + str(args.num_topics) +
                        '_k_' + str(args.k) + '.pkl', 'wb'))
     #for ii in r:
     #    print ii, r[ii]
