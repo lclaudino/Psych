@@ -12,7 +12,7 @@ def export_mallet_states_to_itm(filename):
     doc_counts={}
     freq={}    
     n_docs=0
-    s=''
+    s=u''
 
     for doc in msb:
         assig = [ii for ii in doc]
@@ -32,14 +32,14 @@ def export_mallet_states_to_itm(filename):
         master_vocab=dict(chain(master_vocab.iteritems(), vocab.iteritems()))
         
         word_topics = [str(ii.assignment) for ii in assig]    
-        s+=':0\t'.join(word_topics) + ':0\n'
+        s+=':0\t'.join(word_topics) + ':0\t\n'
 
         n_docs+=1
 
         if n_docs%100 == 0:
             print n_docs
             sys.stdout.flush()
-
+    
     #if not os.path.exists(out_folder+'/resume/'):
     #        os.makedirs(out_folder+'/resume/')
 

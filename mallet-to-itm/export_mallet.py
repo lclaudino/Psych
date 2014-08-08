@@ -1,7 +1,7 @@
 import codecs
 from operator import itemgetter
 
-def export_mallet_topics_to_itm (weights, max_words, out_folder):
+def export_mallet_topics_to_itm (weights, max_words):
 
 	print 'Reading topic word weights'
 	# Create tuples grouped by topic
@@ -43,14 +43,10 @@ def export_mallet_topics_to_itm (weights, max_words, out_folder):
 			if ind >= max_words:
 				break
 			#s += d[topic][ii].strip() + '\t' + ii + '\n'
-			#s +=  str(ii[1]/sum(wei[kk])) + '\t' + ii[0].strip() + '\n'
-			s +=  str(ii[1]) + '\t' + ii[0].strip() + '\n'
+			s +=  str(ii[1]/sum(wei[kk])) + '\t' + ii[0].strip() + '\n'
+			#s +=  str(ii[1]) + '\t' + ii[0].strip() + '\n'
 		
 		
 	print 'Writing file'
-
-	f=codecs.open(out_folder + '/model.topics', 'w')
-	f.write(s)
-	f.close()
-				
+	return s				
 	

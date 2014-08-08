@@ -36,7 +36,7 @@ if __name__ == "__main__":
     if not os.path.exists(init_folder):
         os.makedirs(init_folder)
         
-    doc_ids = [ii.split('\t')[1] for ii in open(args.mallet_doc_file,'r').readlines()[1:]]
+    doc_ids = [ii.split()[1] for ii in open(args.mallet_doc_file,'r').readlines()[1:]]
 
     # csvobj has tuples obtained from the original documents csv
     csvobj = csvwe.UnicodeReader(open(args.real_docs,'r'), delimiter=',')
@@ -70,9 +70,9 @@ if __name__ == "__main__":
     docs = open(args.mallet_doc_file,'r').read()
     open(init_folder+'/model.docs','w').write(docs.replace('\t',' '))
     codecs.open(init_folder + '/model.topics', 'w','utf-8').write(topic_str)
-    open(init_folder + '/states.json', 'w').write('"{ "numIters": %d,\n "prevEntryID": -1}"'%(args.num_ite))   
+    open(init_folder + '/states.json', 'w').write('{ "numIters": %d,\n "prevEntryID": -1}'%(args.num_ite))   
     open(init_folder + '/important.keep', 'w')
-    open(init_folder + '/constraints.all', 'w')
+    open(init_folder + '/constraint.all', 'w')
     open(init_folder + '/removed.all', 'w')
     open(init_folder + '/removed.new', 'w')
     
